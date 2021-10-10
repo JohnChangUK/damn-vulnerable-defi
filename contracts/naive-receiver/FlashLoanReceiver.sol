@@ -19,17 +19,31 @@ contract FlashLoanReceiver {
 
         uint256 amountToBeRepaid = msg.value.add(fee);
 
-        require(address(this).balance >= amountToBeRepaid, "Cannot borrow that much");
-        
+        require(
+            address(this).balance >= amountToBeRepaid,
+            "Cannot borrow that much"
+        );
+
         _executeActionDuringFlashLoan();
-        
+
         // Return funds to pool
-        pool.sendValue(amountToBeRepaid);
+        _sendValue(pool, amountToBeRepaid);
+    }
+
+    function _sendValue(address payable _recipient, uint256 _amount) private {
+        require(
+            address(this).balance >= _amount,
+            "This contract has an insufficient balance"
+        );
+
+        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
+        (bool success, ) = _recipient.call{value: _amount}("");
+        require(success, "Unable to send value, recipient may have reverted");
     }
 
     // Internal function where the funds received are used
-    function _executeActionDuringFlashLoan() internal { }
+    function _executeActionDuringFlashLoan() internal {}
 
     // Allow deposits of ETH
-    receive () external payable {}
+    receive() external payable {}
 }
